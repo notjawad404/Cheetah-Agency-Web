@@ -1,24 +1,72 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowUpRight, FiArrowUpLeft } from "react-icons/fi";
-import Image from 'next/image'; // Import the Image component from Next.js
+import Image from 'next/image';
+import { useAppContext } from '@/context'; // Assumes email context is here
+import { supabase } from '../lib/supabase';
+
+type OptionType = 'Nike Orange' | 'Nike Black' | null;
 
 export default function Page() {
+    const { email } = useAppContext(); // Access email from context
     const [selectedOption, setSelectedOption] = useState<OptionType>(null);
     const router = useRouter();
 
-    type OptionType = 'Nike Orange' | 'Nike Black' | null;
+    useEffect(() => {
+        // Redirect to '/' if email is null, empty, or undefined
+        if (!email) {
+            router.push('/');
+            return;
+        }
+
+        const fetchUserData = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('survey_progress')
+                    .select('progress')
+                    .eq('email', email)
+                    .single();
+
+                if (error) console.error("Error fetching data:", error.message);
+                if (data?.progress?.step1) setSelectedOption(data.progress.step1);
+            } catch (error) {
+                console.error("Unexpected error fetching data:", error);
+            }
+        };
+
+        fetchUserData();
+    }, [email, router]);
 
     const handleSelect = (option: OptionType) => {
         setSelectedOption(option);
     };
 
-    const handleNext = () => {
-        if (selectedOption) {
-            // Navigate to the next question
-            console.log("Selected option:", selectedOption);
-            router.push('/survey');
+    const handleNext = async () => {
+        if (!selectedOption) {
+            console.log("Please select an option before proceeding.");
+            return;
+        }
+
+        try {
+            const { error } = await supabase
+                .from('survey_progress')
+                .upsert({
+                    email,
+                    progress: { step1: selectedOption },
+                    status: 'in-progress',
+                    step: 1
+                }, { onConflict: 'email' });
+
+            if (error) {
+                console.error("Error saving data:", error.message);
+                return;
+            }
+
+            console.log("Saved selected option:", selectedOption);
+            router.push('/survey'); // Navigate to the next page if successful
+        } catch (error) {
+            console.error("Unexpected error saving data:", error);
         }
     };
 
@@ -29,6 +77,7 @@ export default function Page() {
     return (
         <div className="h-screen flex items-center justify-center bg-gray-800">
             <div className="p-8 rounded-lg shadow-lg text-center text-white max-w-lg">
+                {email && <p className="text-sm text-gray-400 mb-4">Logged in as: {email}</p>}
                 <p className="uppercase tracking-wide text-sm font-semibold text-gray-400 mb-2">Question 1</p>
                 <h2 className="text-2xl font-bold mb-6">What is your preferred choice?</h2>
                 
@@ -41,8 +90,8 @@ export default function Page() {
                         <Image 
                             src="/assets/NikeOrange.png" 
                             alt="Nike Orange" 
-                            width={128} // Set width
-                            height={128} // Set height
+                            width={128}
+                            height={128}
                             className="mx-auto" 
                         />
                     </div>
@@ -55,8 +104,8 @@ export default function Page() {
                         <Image 
                             src="/assets/NikeBlack.png" 
                             alt="Nike Black" 
-                            width={128} // Set width
-                            height={128} // Set height
+                            width={128}
+                            height={128}
                             className="mx-auto" 
                         />
                     </div>

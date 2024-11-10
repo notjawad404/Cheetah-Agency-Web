@@ -2,12 +2,61 @@
 import { FiArrowUpRight } from 'react-icons/fi';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-export default function Page (){
+import { useState } from 'react';
+import { supabase } from './lib/supabase';
+import { useAppContext } from '@/context';
+
+interface PageProps {
+  email: string;
+}
+
+export default function Page({ email }: PageProps) {
   const router = useRouter();
-  const handleSubmit = (event: React.FormEvent) => {
+  const { setEmail: setContextEmail } = useAppContext(); // Destructure setEmail from context
+  const [emailState, setEmail] = useState(email); // Initialize with the passed email prop
+
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    router.push('/options');
+    setContextEmail(emailState); // Update context with the current email
+
+    // Check if email exists in Supabase
+    const { data, error } = await supabase
+      .from('survey_progress')
+      .select('*')
+      .eq('email', emailState)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      // Email doesn't exist, create a new entry
+      const { error: insertError } = await supabase
+        .from('survey_progress')
+        .insert([{ email: emailState, progress: {}, status: 'in-progress', step: 1 }]);
+
+      if (insertError) {
+        console.error('Error inserting new email: ', insertError.message);
+        return;
+      }
+
+      // Redirect to /options since it's a new user
+      router.push('/options');
+    } else if (data) {
+      // Email exists, check the status
+      const { status, progress } = data;
+
+      if (status === 'complete') {
+        router.push('/thanks');
+      } else if (status === 'in-progress') {
+        if (!progress.step1) {
+          router.push('/options');
+        } else if (!progress.step2) {
+          router.push('/survey');
+        } else {
+          router.push('/thanks');
+        }
+      }
+    }
   };
+
   return (
     <div className="h-screen bg-gradient-to-r from-gray-600 to-black flex items-center justify-center p-6">
       <div className="flex flex-row rounded-lg p-8 w-full">
@@ -22,8 +71,8 @@ export default function Page (){
           <Image
             src="/assets/shoe1.png"
             alt="Shoe"
-            width={240} 
-            height={240} 
+            width={240}
+            height={240}
             className="object-cover z-20 absolute mb-2"
           />
           <Image
@@ -46,7 +95,7 @@ export default function Page (){
               genuine feedback is invaluable to us!
             </p>
           </div>
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <label className="block text-sm text-white" htmlFor="email">
               Email
             </label>
@@ -55,9 +104,10 @@ export default function Page (){
               id="email"
               placeholder="Enter email address"
               className="w-full px-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-green-400 bg-white text-gray-800"
+              value={emailState}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <button
-              onClick={handleSubmit}
               type="submit"
               className="flex flex-row justify-between px-10 w-full py-2 mt-4 bg-lime-500 text-black font-semibold rounded-full hover:bg-lime-600 transition-colors"
             >
@@ -69,4 +119,4 @@ export default function Page (){
       </div>
     </div>
   );
-};
+}

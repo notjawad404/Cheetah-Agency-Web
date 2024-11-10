@@ -1,27 +1,84 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiArrowUpRight, FiArrowUpLeft } from "react-icons/fi";
 import { useRouter } from 'next/navigation';
+import { useAppContext } from '@/context';
+import { supabase } from '../lib/supabase';
 
-export default function Page () {
+export default function Page() {
+  const { email } = useAppContext();
   const [comfort, setComfort] = useState<number | null>(null);
   const [looks, setLooks] = useState<number | null>(null);
   const [price, setPrice] = useState<number | null>(null);
-
   const router = useRouter();
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    // Add form submission logic here
 
-    console.log({ comfort, looks, price });
-    router.push('/thanks');
+  useEffect(() => {
+    if (!email) {
+      router.push('/');
+      return;
+    }
+
+    const fetchProgress = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('survey_progress')
+          .select('progress')
+          .eq('email', email)
+          .single();
+
+        if (error) throw error;
+
+        if (!data?.progress?.step1) {
+          router.push('/options');
+        } else if (data?.progress?.step2) {
+          // If step 2 data exists, populate the ratings
+          setComfort(data.progress.step2.comfort);
+          setLooks(data.progress.step2.looks);
+          setPrice(data.progress.step2.price);
+        }
+      } catch (error) {
+        console.error("Error fetching progress:", error);
+      }
+    };
+
+    fetchProgress();
+  }, [email, router]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (comfort && looks && price) {
+      try {
+        const { error } = await supabase
+          .from('survey_progress')
+          .upsert(
+            {
+              email,
+              progress: {
+                step1: true, // Assumes step1 data exists since user is here
+                step2: { comfort, looks, price }
+              },
+              status: 'completed',
+              step: 3
+            },
+            { onConflict: 'email' }
+          );
+
+        if (error) {
+          console.error("Error saving data:", error.message);
+          return;
+        }
+        console.log("Step 2 data saved:", { comfort, looks, price });
+        router.push('/thanks');
+      } catch (error) {
+        console.error("Unexpected error saving data:", error);
+      }
+    }
   };
 
   const handleBack = () => {
     router.push('/options');
   };
 
-  // Helper function to render rating buttons with cumulative selection
   const renderRatingButtons = (
     selectedValue: number | null,
     setValue: (value: number) => void
@@ -88,13 +145,11 @@ export default function Page () {
             onClick={handleBack}
             className="bg-pink-300 flex flex-row px-4 py-2 rounded-xl text-white hover:bg-pink-500"
           >
-
             <FiArrowUpLeft size={24} color="black" />
             <span>Back</span>
           </button>
           <button
             type="submit"
-            onClick={handleSubmit}
             className="bg-white flex flex-row text-gray-800 px-4 py-2 rounded-xl hover:bg-gray-200"
           >
             <span>Send</span>
@@ -104,4 +159,4 @@ export default function Page () {
       </form>
     </div>
   );
-};
+}
