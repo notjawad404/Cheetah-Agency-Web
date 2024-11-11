@@ -8,87 +8,83 @@ import { supabase } from "../lib/supabase";
 import axios from "axios";
 
 export default function Page() {
-  const { email } = useAppContext(); // Fetching email from app context
-  const router = useRouter(); // Router instance to navigate between pages
+  const { email } = useAppContext();
+  const router = useRouter();
 
-  // Check if the data is completed in Supabase and sync with MongoDB
   useEffect(() => {
     const checkAndSyncData = async () => {
-      // If no email is available, redirect to the home page
       if (!email) {
-        router.push("/"); // Redirecting user to home if no email found
+        router.push("/");
         return;
       }
 
+      console.log("Checking", email);
       try {
-        // Fetch the user's survey data from the Supabase database
+        // Fetch the user's survey data from Supabase
         const { data: surveyData, error } = await supabase
-          .from("survey_progress") // Assuming this table stores all your survey data
-          .select("email, progress, status") // Select only the email, progress, and status fields
-          .eq("email", email) // Filtering by email
-          .single(); // Ensuring we fetch a single row for the user
+          .from("survey_progress")
+          .select("email, progress, status")
+          .eq("email", email)
+          .single();
 
-        // Handle any error while fetching the survey data
         if (error) {
           console.error("Error fetching Supabase data:", error);
           return;
         }
 
-        // Ensure that we have both progress and status data before proceeding
         if (surveyData?.progress && surveyData?.status) {
           try {
-            // Check if the data already exists in MongoDB using axios GET request
+            // Check if data exists in MongoDB
             const response = await axios.get(
-              `https://cheetah-agnecy-survey-backend.vercel.app//api/survey/${email}`
+              `https://cheetah-agnecy-survey-backend.vercel.app/api/survey/${email}`
             );
             const existingData = response.data;
 
-            // If data exists in MongoDB, update it
+            // Define the payload according to the schema, without nested `step2`
+            const payload = {
+              email,
+              step1: surveyData.progress.step1,
+              step2: {
+                Comfort: surveyData.progress.step2.Comfort,
+                Looks: surveyData.progress.step2.Looks,
+                Price: surveyData.progress.step2.Price,
+              },
+              status: surveyData.status,
+            };
+
             if (existingData) {
               await axios.put(
-                `https://cheetah-agnecy-survey-backend.vercel.app//api/survey/${email}`,
-                {
-                  email,
-                  progress: surveyData.progress,
-                  status: surveyData.status,
-                }
+                `https://cheetah-agnecy-survey-backend.vercel.app/api/survey/${email}`,
+                payload
               );
             } else {
-              // If data doesn't exist in MongoDB, post new data
-              await axios.post("https://cheetah-agnecy-survey-backend.vercel.app//api/survey", {
-                email,
-                progress: surveyData.progress,
-                status: surveyData.status,
-              });
+              await axios.post("https://cheetah-agnecy-survey-backend.vercel.app/api/survey", payload);
             }
           } catch (error) {
             console.error("Error posting/updating MongoDB data:", error);
           }
         } else {
-          console.error("Survey data is incomplete"); // Log an error if survey data is incomplete
+          console.error("Survey data is incomplete");
         }
       } catch (error) {
-        console.error("Error in checking and syncing data:", error); // Log any errors during the overall sync process
+        console.error("Error in checking and syncing data:", error);
       }
     };
 
-    checkAndSyncData(); // Trigger the check and sync when the component is mounted
-  }, [email, router]); // Dependencies: re-run if `email` or `router` changes
+    checkAndSyncData();
+  }, [email, router]);
 
-  // Handle "Back to Home" button click, redirecting the user to the homepage
-  const handleBacktoHome = (event: React.FormEvent) => {
-    event.preventDefault(); // Prevent default form submission behavior
-    router.push("/"); // Redirect user to home
+  const handleBacktoHome = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    router.push("/");
   };
 
-  // Handle "Back" button click, redirecting the user to the survey page
   const handleBack = () => {
-    router.push("/survey"); // Redirect user to the survey page
+    router.push("/survey");
   };
 
   return (
     <div className="h-screen bg-gradient-to-r from-gray-600 to-black flex items-center justify-center p-6">
-      {/* Left section with images (background) */}
       <div className="absolute inset-0 flex flex-col lg:flex-row rounded-lg p-8 w-full">
         <div className="w-full lg:w-1/2 flex justify-center items-center flex-col">
           <Image
@@ -115,7 +111,6 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Right section with text and buttons */}
       <div className="relative z-10 w-full lg:w-1/2 mx-0 lg:mx-40 text-center">
         <div className="w-full lg:w-1/2 mx-auto">
           <h1 className="text-white text-4xl font-bold mb-6">
@@ -124,20 +119,18 @@ export default function Page() {
           <p className="text-white mb-10">for your feedback</p>
 
           <div className="flex justify-center space-x-4 mt-10">
-            {/* Back button */}
             <button
               type="button"
-              onClick={handleBack} // Trigger navigation to survey page
+              onClick={handleBack}
               className="bg-pink-300 flex flex-row px-6 py-2 rounded-xl text-black hover:bg-pink-500"
             >
               <FiArrowUpLeft size={24} />
               <span className="ml-2">Back</span>
             </button>
 
-            {/* Back to Home button */}
             <button
               type="button"
-              onClick={handleBacktoHome} // Trigger navigation to home page
+              onClick={handleBacktoHome}
               className="bg-white flex flex-row px-6 py-2 rounded-xl text-gray-800 hover:bg-gray-200"
             >
               <span className="mr-2">Back to Home</span>
