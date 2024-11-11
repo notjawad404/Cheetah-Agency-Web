@@ -10,6 +10,7 @@ export default function Page() {
   const [comfort, setComfort] = useState<number | null>(null);
   const [looks, setLooks] = useState<number | null>(null);
   const [price, setPrice] = useState<number | null>(null);
+  const [step1Data, setStep1Data] = useState<boolean | null>(null); // Store Step 1 completion status
   const router = useRouter();
 
   useEffect(() => {
@@ -28,10 +29,16 @@ export default function Page() {
 
         if (error) throw error;
 
-        if (!data?.progress?.step1) {
-          router.push('/options');
-        } else if (data?.progress?.step2) {
-          // If step 2 data exists, populate the ratings
+        // Check if Step 1 is completed
+        if (data?.progress?.step1) {
+          setStep1Data(data.progress.step1); // Store Step 1 data
+        } else {
+          router.push('/options'); // If Step 1 isn't completed, redirect to '/options'
+          return;
+        }
+
+        // If Step 2 exists, populate the ratings
+        if (data?.progress?.step2) {
           setComfort(data.progress.step2.comfort);
           setLooks(data.progress.step2.looks);
           setPrice(data.progress.step2.price);
@@ -46,6 +53,7 @@ export default function Page() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
     if (comfort && looks && price) {
       try {
         const { error } = await supabase
@@ -54,8 +62,8 @@ export default function Page() {
             {
               email,
               progress: {
-                step1: true, // Assumes step1 data exists since user is here
-                step2: { comfort, looks, price }
+                step1: step1Data,
+                step2: { comfort, looks, price }, // Update Step 2 data
               },
               status: 'completed',
               step: 3
@@ -67,11 +75,15 @@ export default function Page() {
           console.error("Error saving data:", error.message);
           return;
         }
+
         console.log("Step 2 data saved:", { comfort, looks, price });
         router.push('/thanks');
       } catch (error) {
         console.error("Unexpected error saving data:", error);
       }
+    } else {
+      // Show an error message if all ratings are not selected
+      console.log("Please select values for all options.");
     }
   };
 

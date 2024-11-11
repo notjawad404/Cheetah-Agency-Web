@@ -18,32 +18,33 @@ export default function Page({ email }: PageProps) {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setContextEmail(emailState); // Update context with the current email
-
+  
     // Check if email exists in Supabase
     const { data, error } = await supabase
       .from('survey_progress')
       .select('*')
       .eq('email', emailState)
       .single();
-
+  
     if (error && error.code === 'PGRST116') {
       // Email doesn't exist, create a new entry
       const { error: insertError } = await supabase
         .from('survey_progress')
         .insert([{ email: emailState, progress: {}, status: 'in-progress', step: 1 }]);
-
+  
       if (insertError) {
         console.error('Error inserting new email: ', insertError.message);
         return;
       }
-
+  
       // Redirect to /options since it's a new user
       router.push('/options');
     } else if (data) {
       // Email exists, check the status
       const { status, progress } = data;
-
+  
       if (status === 'complete') {
+        // Redirect to /thanks if status is complete
         router.push('/thanks');
       } else if (status === 'in-progress') {
         if (!progress.step1) {
@@ -56,6 +57,7 @@ export default function Page({ email }: PageProps) {
       }
     }
   };
+  
 
   return (
     <div className="h-screen bg-gradient-to-r from-gray-600 to-black flex items-center justify-center p-6">
