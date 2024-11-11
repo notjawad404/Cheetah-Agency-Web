@@ -67,8 +67,8 @@ const Page = () => {
   return (
     <div className="h-screen bg-gradient-to-r from-gray-600 to-black flex items-center justify-center p-6">
       {/* Left section with images */}
-      <div className="absolute inset-0 flex flex-col lg:flex-row rounded-lg p-8 w-full">
-        <div className="w-full lg:w-1/2 flex justify-center items-center flex-col">
+      <div className="absolute inset-0 flex flex-col lg:flex-row rounded-lg p-8 w-full lg:w-1/2">
+        <div className="w-full lg:w-1/2 flex justify-center items-center flex-col mx-auto">
           {/* Union logo */}
           <Image
             src="/assets/Union.png"
@@ -97,7 +97,7 @@ const Page = () => {
       </div>
 
       {/* Right section with questionnaire details */}
-      <div className="relative z-10 w-full lg:w-1/2 mx-0 lg:mx-40">
+      <div className="relative z-10 lg:z-0 w-full lg:w-1/2 pl-40">
         <h1 className="text-white text-4xl font-bold mb-6 text-center w-full lg:w-1/2">
           Questionnaire
         </h1>
