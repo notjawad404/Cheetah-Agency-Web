@@ -6,11 +6,7 @@ import { useState } from 'react';
 import { supabase } from './lib/supabase';
 import { useAppContext } from '@/context';
 
-interface PageProps {
-  email: string;
-}
-
-const Page = ({ email }: PageProps) => {
+const Page = () => {
   // Router hook to manage navigation
   const router = useRouter();
   
@@ -18,7 +14,7 @@ const Page = ({ email }: PageProps) => {
   const { setEmail: setContextEmail } = useAppContext();
 
   // Local state to manage email input
-  const [emailState, setEmail] = useState(email);
+  const [emailState, setEmail] = useState('');
 
   // Form submit handler
   const handleSubmit = async (event: React.FormEvent) => {
