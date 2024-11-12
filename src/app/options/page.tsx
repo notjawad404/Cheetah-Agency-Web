@@ -92,7 +92,7 @@ export default function Page() {
                 <div className="flex justify-center gap-8 mb-6">
                     {/* Nike Orange option */}
                     <div 
-                        className={`p-4 rounded-lg ${selectedOption === 'Nike Orange' ? 'bg-gray-700 border border-green-500' : 'bg-gray-800'} cursor-pointer`} 
+                        className={`p-4 rounded-lg ${selectedOption === 'Nike Orange' ? 'bg-gray-700 border border-green-500' : 'bg-gray-600'} cursor-pointer`} 
                         onClick={() => handleSelect('Nike Orange')} // Handle selection of Nike Orange
                     >
                         <p className="mt-2">Nike Orange</p>
@@ -107,7 +107,7 @@ export default function Page() {
                     
                     {/* Nike Black option */}
                     <div 
-                        className={`p-4 rounded-lg ${selectedOption === 'Nike Black' ? 'bg-gray-700 border border-green-500' : 'bg-gray-800'} cursor-pointer`} 
+                        className={`p-4 rounded-lg ${selectedOption === 'Nike Black' ? 'bg-gray-700 border border-green-500' : 'bg-gray-600'} cursor-pointer`} 
                         onClick={() => handleSelect('Nike Black')} // Handle selection of Nike Black
                     >
                         <p className="mt-2">Nike Black</p>
