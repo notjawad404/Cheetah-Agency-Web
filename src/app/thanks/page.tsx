@@ -17,7 +17,7 @@ export default function Page() {
         router.push("/");
         return;
       }
-
+  
       console.log("Checking", email);
       try {
         const { data: surveyData, error } = await supabase
@@ -25,39 +25,58 @@ export default function Page() {
           .select("email, progress, status")
           .eq("email", email)
           .single();
-
+          console.log("Survey", surveyData);
         if (error) {
           console.error("Error fetching Supabase data:", error);
           return;
         }
-
+  
         if (surveyData?.progress && surveyData?.status) {
           try {
+            const email = surveyData?.email
+            console.log("Syncing", email);
             const response = await axios.get(
-              `https://cheetah-agnecy-survey-backend.vercel.app/api/survey/${email}`
+              `https://cheetah-agnecy-survey-backend.vercel.app/api/survey/${email}`,
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              }
             );
             const existingData = response.data;
-
+  
             const payload = {
               email,
-              step1: surveyData.progress.step1,
-              step2: {
-                Comfort: surveyData.progress.step2.Comfort,
-                Looks: surveyData.progress.step2.Looks,
-                Price: surveyData.progress.step2.Price,
+              progress: {
+                step1: surveyData.progress.step1,
+                step2: {
+                  comfort: surveyData.progress.step2.comfort,
+                  looks: surveyData.progress.step2.looks,
+                  price: surveyData.progress.step2.price,
+                },
               },
               status: surveyData.status,
             };
-
+  
             if (existingData) {
               await axios.put(
                 `https://cheetah-agnecy-survey-backend.vercel.app/api/survey/${email}`,
-                payload
+                payload,
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                }
               );
             } else {
               await axios.post(
                 "https://cheetah-agnecy-survey-backend.vercel.app/api/survey",
-                payload
+                payload,
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                }
               );
             }
           } catch (error) {
@@ -70,9 +89,10 @@ export default function Page() {
         console.error("Error in checking and syncing data:", error);
       }
     };
-
+  
     checkAndSyncData();
   }, [email, router]);
+  
 
   const handleBacktoHome = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
