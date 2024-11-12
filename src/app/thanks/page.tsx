@@ -20,7 +20,6 @@ export default function Page() {
 
       console.log("Checking", email);
       try {
-        // Fetch the user's survey data from Supabase
         const { data: surveyData, error } = await supabase
           .from("survey_progress")
           .select("email, progress, status")
@@ -34,13 +33,11 @@ export default function Page() {
 
         if (surveyData?.progress && surveyData?.status) {
           try {
-            // Check if data exists in MongoDB
             const response = await axios.get(
               `https://cheetah-agnecy-survey-backend.vercel.app/api/survey/${email}`
             );
             const existingData = response.data;
 
-            // Define the payload according to the schema, without nested `step2`
             const payload = {
               email,
               step1: surveyData.progress.step1,
@@ -58,7 +55,10 @@ export default function Page() {
                 payload
               );
             } else {
-              await axios.post("https://cheetah-agnecy-survey-backend.vercel.app/api/survey", payload);
+              await axios.post(
+                "https://cheetah-agnecy-survey-backend.vercel.app/api/survey",
+                payload
+              );
             }
           } catch (error) {
             console.error("Error posting/updating MongoDB data:", error);
@@ -85,8 +85,8 @@ export default function Page() {
 
   return (
     <div className="h-screen bg-gradient-to-r from-gray-600 to-black flex items-center justify-center p-6">
-      <div className="absolute inset-0 flex flex-col lg:flex-row rounded-lg p-8 w-full">
-        <div className="w-full lg:w-1/2 flex justify-center items-center flex-col">
+      <div className="absolute inset-0 flex flex-col lg:flex-row rounded-lg p-8 w-full lg:w-1/2">
+        <div className="w-full lg:w-1/2 flex justify-center items-center flex-col mx-auto">
           <Image
             src="/assets/Union.png"
             alt="Union"
@@ -99,7 +99,7 @@ export default function Page() {
             alt="Shoe"
             width={240}
             height={240}
-            className="object-cover z-0 absolute mb-2"
+            className="object-cover z-0 lg:z-20 absolute mb-2"
           />
           <Image
             src="/assets/Ellipse.png"
@@ -111,32 +111,29 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="relative z-10 w-full lg:w-1/2 mx-0 lg:mx-40 text-center">
-        <div className="w-full lg:w-1/2 mx-auto">
-          <h1 className="text-white text-4xl font-bold mb-6">
-            Questionnaire
-          </h1>
-          <p className="text-white mb-10">for your feedback</p>
+      <div className="relative z-10 lg:z-0 w-full lg:w-80 lg:ml-96">
+        <h1 className="text-white text-4xl font-bold mb-6 text-center w-full lg:w-1/2">
+          Questionnaire
+        </h1>
 
-          <div className="flex justify-center space-x-4 mt-10">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="bg-pink-300 flex flex-row px-6 py-2 rounded-xl text-black hover:bg-pink-500"
-            >
-              <FiArrowUpLeft size={24} />
-              <span className="ml-2">Back</span>
-            </button>
+        <div className="flex justify-center space-x-4 mt-10">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="bg-pink-300 flex flex-row px-6 py-2 rounded-xl text-black hover:bg-pink-500"
+          >
+            <FiArrowUpLeft size={24} />
+            <span className="ml-2">Back</span>
+          </button>
 
-            <button
-              type="button"
-              onClick={handleBacktoHome}
-              className="bg-white flex flex-row px-6 py-2 rounded-xl text-gray-800 hover:bg-gray-200"
-            >
-              <span className="mr-2">Back to Home</span>
-              <FiArrowUpRight size={24} />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleBacktoHome}
+            className="bg-white flex flex-row w-60 px-6 py-2 rounded-xl text-gray-800 hover:bg-gray-200"
+          >
+            <span className="mr-2">Back to Home</span>
+            <FiArrowUpRight size={24} />
+          </button>
         </div>
       </div>
     </div>
